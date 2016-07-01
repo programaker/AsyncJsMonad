@@ -9,6 +9,13 @@
     };
 
 
+    function Async() {
+        this.isSuccess = true;
+        this.success = {value: null, action: null};
+        this.error = {value: null, action: null};
+    }
+
+
     //request(config: JsObject): Async[A]
     function request(config) {
         var async = new Async();
@@ -119,12 +126,5 @@
     }
 
     function doNothing(){}
-
-
-    function Async() {
-        this.isSuccess = true;
-        this.success = {value: null, action: null};
-        this.error = {value: null, action: null};
-    }
 
 }(window.jQuery));
