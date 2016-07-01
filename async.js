@@ -12,15 +12,17 @@
     /** request(config: JsObject): Async[A] */
     function request(config) {
         var async = new Async();
+        var _config = $.extend({}, config);
 
-        $.ajax(config)
-            .done(function success(resp) {
-                completeSuccess(async, resp);
-            })
-            .fail(function error(jqXHR, textStatus, errorThrown) {
-                completeError(async, requestError(jqXHR, textStatus, errorThrown));
-            });
+        _config.success = function ajaxSuccess(resp) {
+            completeSuccess(async, resp);
+        };
 
+        _config.error = function ajaxError(jqXHR, textStatus, errorThrown) {
+            completeError(async, requestError(jqXHR, textStatus, errorThrown));
+        }
+
+        $.ajax(_config);
         return async;        
     }
 
@@ -28,7 +30,7 @@
     function map(asyncA, fn) {
         if (asyncA.isSuccess) {
             var asyncB = new Async();
-            
+
             ready(asyncA, function(a) { 
                 try {
                     completeSuccess(asyncB, fn(a));    
@@ -60,31 +62,31 @@
     function completeSuccess(async, response) {
         async.isSuccess = true;
         async.success.value = response;
-        async.success.action(response);
+        async.success && async.success.action(response);
     }
 
     function completeError(async, e) {
         async.isSuccess = false;
         async.error.value = e;
-        async.error.action(e);
+        async.error && async.error.action(e);
     }
 
     function ready(async, successAction, errorAction) {
         //storing actions to run lately if the Async is not completed yet
-        async.success.action = successAction || doNothing;
-        async.error.action = errorAction || doNothing;
+        async.success.action = successAction;
+        async.error.action = async.error.action || errorAction;
 
         if (async.isSuccess) {
             if (async.success.value) {
                 //already completed; call and remove action to avoid further calls
-                async.success.action(async.success.value);
-                async.success.action = doNothing;
+                async.success.action && async.success.action(async.success.value);
+                async.success.action = null;
             }
         } else {
             if (async.error.value) {
                 //already completed; call and remove action to avoid further calls
-                async.error.action(async.error.value);
-                async.error.action = doNothing;
+                async.error.action && async.error.action(async.error.value);
+                async.error.action = null;
             }
         }
     }
@@ -117,8 +119,8 @@
 
     function Async() {
         this.isSuccess = true;
-        this.success = {value: null, action: doNothing};
-        this.error = {value: null, action: doNothing};
+        this.success = {value: null, action: null};
+        this.error = {value: null, action: null};
     }
 
 
