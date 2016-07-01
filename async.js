@@ -88,13 +88,13 @@
     function completeSuccess(async, response) {
         async.isSuccess = true;
         async.success.value = response;
-        async.success && async.success.action(response);
+        async.success.action && async.success.action(response);
     }
 
     function completeError(async, e) {
         async.isSuccess = false;
         async.error.value = e;
-        async.error && async.error.action(e);
+        async.error.action && async.error.action(e);
     }
 
     function ready(async, successAction, errorAction) {

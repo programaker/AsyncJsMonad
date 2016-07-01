@@ -24,11 +24,11 @@
     //Async[YoutubeChannel] => Async[List[YoutubeVideo]]
     var asyncChannelLastVideos = Async.flatMap(asyncChosenChannel, function(chosenChannel) {
         return Async.request({
-            url: 'https://www.googleapis.com/youtube/v3/ERROR_HERE', //<= to cause error
+            url: 'https://www.googleapis.com/youtube/v3/search',
             dataType: 'jsonp',
             jsonp: 'callback',
             data: {
-                key: 'AIzaSyDQOzdypbd04-ExD90xUVPoEG2Hfx7X3X8',
+                key: 'AIzaSyDQOzdypbd04-ExD90xUVPoEG2Hfx7X3X8__ERROR', //<= to cause error
                 part: 'snippet',
                 type: 'video',
                 order: 'date',
