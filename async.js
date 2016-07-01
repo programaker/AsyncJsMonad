@@ -3,30 +3,36 @@
 
     window.Async = {
         request: request,
+        match: match,
         map: map,
-        flatMap: flatMap,
-        match: match
+        flatMap: flatMap
     };
 
 
-    /** request(config: JsObject): Async[A] */
+    //request(config: JsObject): Async[A]
     function request(config) {
         var async = new Async();
-        var _config = $.extend({}, config);
+        
+        $.ajax(config)
+            .done(function ajaxSuccess(resp) {
+                try {
+                    completeSuccess(async, resp);
+                } catch (e) {
+                    completeError(async, unexpectedError({response: resp, error: e}));
+                }
+            })
+            .fail(function ajaxError(jqXHR, textStatus, errorThrown) {
+                completeError(async, requestError(jqXHR, textStatus, errorThrown));
+            });
 
-        _config.success = function ajaxSuccess(resp) {
-            completeSuccess(async, resp);
-        };
-
-        _config.error = function ajaxError(jqXHR, textStatus, errorThrown) {
-            completeError(async, requestError(jqXHR, textStatus, errorThrown));
-        }
-
-        $.ajax(_config);
         return async;        
     }
 
-    /** map(asyncA: Async[A], fn: A => B): Async[B] */
+    function match(async, callbacks) {
+        ready(async, callbacks.success, callbacks.error);
+    }
+
+    //map(asyncA: Async[A], fn: A => B): Async[B]
     function map(asyncA, fn) {
         if (asyncA.isSuccess) {
             var asyncB = new Async();
@@ -45,7 +51,7 @@
         return asyncA;
     }
 
-    /** flatMap(asyncA: Async[A], fn: A => Async[B]): Async[B] */
+    //flatMap(asyncA: Async[A], fn: A => Async[B]): Async[B]
     function flatMap(asyncA, fn) {
         if (asyncA.isSuccess) {
             return flatten(map(asyncA, fn));
@@ -54,10 +60,23 @@
         return asyncA;
     }
 
-    function match(async, callbacks) {
-        ready(async, callbacks.success, callbacks.error);
-    }
 
+    //flatten(nestedAsync: Async[Async[A]]): Async[A]
+    function flatten(nestedAsync) {
+        var flatAsync = new Async();
+
+        ready(nestedAsync, function(internalAsync) {
+            ready(internalAsync, function(a) {
+                try {
+                    completeSuccess(flatAsync, a);
+                } catch (e) {
+                    completeError(flatAsync, unexpectedError(e));
+                }
+            });
+        });
+
+        return flatAsync;
+    }
 
     function completeSuccess(async, response) {
         async.isSuccess = true;
@@ -91,23 +110,6 @@
         }
     }
 
-    /** flatten(nestedAsync: Async[Async[A]]): Async[A] */
-    function flatten(nestedAsync) {
-        var flatAsync = new Async();
-
-        ready(nestedAsync, function(internalAsync) {
-            ready(internalAsync, function(a) {
-                try {
-                    completeSuccess(flatAsync, a);
-                } catch (e) {
-                    completeError(flatAsync, unexpectedError(e));
-                }
-            });
-        });
-
-        return flatAsync;
-    }
-
     function requestError(jqXHR, textStatus, errorThrown) {
         return {status: jqXHR.status, textStatus: textStatus, errorThrown: errorThrown};
     }
@@ -116,14 +118,13 @@
         return {status: 500, textStatus: 'Unexpected Error', errorThrown: e};
     }
 
+    function doNothing(){}
+
 
     function Async() {
         this.isSuccess = true;
         this.success = {value: null, action: null};
         this.error = {value: null, action: null};
     }
-
-
-    function doNothing(){}
 
 }(window.jQuery));
