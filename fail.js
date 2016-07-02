@@ -1,4 +1,4 @@
-(function defIndexPage($, Async) {
+(function defFail($, Async) {
     'use strict';
 
     //request 4 Youtube channels by id
@@ -16,19 +16,19 @@
 
     //choose one of the channels randomly
     //Async[List[YoutubeChannel]] => Async[YoutubeChannel]
-    var asyncChosenChannel = Async.map(asyncChannels, function(channelsJson) {
-        return channelsJson.items[randomIntBetween(0, 3)];
+    var asyncChosenChannel = asyncChannels.map(function(channels) {
+        return channels.items[randomIntBetween(0, 3)];
     });
 
     //request the last 10 videos of the chosen channel
     //Async[YoutubeChannel] => Async[List[YoutubeVideo]]
-    var asyncChannelLastVideos = Async.flatMap(asyncChosenChannel, function(chosenChannel) {
+    var asyncChannelLastVideos = asyncChosenChannel.flatMap(function(chosenChannel) {
         return Async.request({
             url: 'https://www.googleapis.com/youtube/v3/search',
             dataType: 'jsonp',
             jsonp: 'callback',
             data: {
-                key: 'AIzaSyDQOzdypbd04-ExD90xUVPoEG2Hfx7X3X8__ERROR', //<= to cause error
+                key: 'AIzaSyDQOzdypbd04-ExD90xUVPoEG2Hfx7X3X8__ERROR', //<= cause error
                 part: 'snippet',
                 type: 'video',
                 order: 'date',
@@ -40,13 +40,13 @@
 
     //get one of the videos randomly
     //Async[List[YoutubeVideo]] => Async[YoutubeVideo]
-    var asyncChosenVideo = Async.map(asyncChannelLastVideos, function(channelLastVideos) {
+    var asyncChosenVideo = asyncChannelLastVideos.map(function(channelLastVideos) {
         return channelLastVideos.items[randomIntBetween(0, 9)];
     });
 
     //transform the video object in another with only id and high-res thumbnail url
     //Async[YoutubeVideo] => Async[SimpleVideo]
-    var asyncSimpleVideo = Async.map(asyncChosenVideo, function(chosenVideo) {
+    var asyncSimpleVideo = asyncChosenVideo.map(function(chosenVideo) {
         return {
             videoId: chosenVideo.id.videoId,
             videoThumbnailUrl: chosenVideo.snippet.thumbnails.high.url
@@ -54,7 +54,7 @@
     });
 
     //finally, handle the results!
-    Async.match(asyncSimpleVideo, {
+    asyncSimpleVideo.match({
         success: function(simpleVideo) {
             console.log('>>> success => ', simpleVideo);
             $('#error').text('');

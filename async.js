@@ -1,130 +1,154 @@
 (function defAsync($) {
     'use strict';
 
+    //Export module's public interface
     window.Async = {
-        request: request,
-        match: match,
+        request: request
+    };
+
+    //The Async object
+    function Async() {
+        //success case state
+        this.isSuccess = false;
+        this.value = null;
+        this.successActions = [];
+
+        //error case state
+        this.isError = false;
+        this.error = null;
+        this.errorActions = [];
+    }
+    Async.prototype = {
         map: map,
-        flatMap: flatMap
+        flatMap: flatMap,
+        match: match
     };
 
 
-    function Async() {
-        this.isSuccess = true;
-        this.success = {value: null, action: null};
-        this.error = {value: null, action: null};
-    }
-
-
-    //request(config: JsObject): Async[A]
     function request(config) {
         var async = new Async();
         
         $.ajax(config)
             .done(function ajaxSuccess(resp) {
-                try {
-                    completeSuccess(async, resp);
-                } catch (e) {
-                    completeError(async, unexpectedError({response: resp, error: e}));
-                }
+                completeSuccess(async, resp);
             })
             .fail(function ajaxError(jqXHR, textStatus, errorThrown) {
                 completeError(async, requestError(jqXHR, textStatus, errorThrown));
             });
 
-        return async;        
+        return async;    
     }
 
-    function match(async, callbacks) {
-        ready(async, callbacks.success, callbacks.error);
+    //Async[A].map(fn: A => B): Async[B]
+    function map(fn) {
+        var asyncB = new Async();
+        
+        readySuccess(this, function(a) {
+            try {
+                completeSuccess(asyncB, fn(a));
+            } catch (e) {
+                completeError(asyncB, unexpectedError(e));
+            }
+        });
+
+        readyError(this, function(e) {
+            completeError(asyncB, unexpectedError(e));
+        });
+
+        return asyncB;
     }
 
-    //map(asyncA: Async[A], fn: A => B): Async[B]
-    function map(asyncA, fn) {
-        if (asyncA.isSuccess) {
-            var asyncB = new Async();
+    //Async[A].flatMap(fn: A => Async[B]): Async[B]
+    function flatMap(fn) {
+        return flatten(this.map(fn));
+    }
 
-            ready(asyncA, function(a) { 
-                try {
-                    completeSuccess(asyncB, fn(a));    
-                } catch (e) {
-                    completeError(asyncB, unexpectedError(e));
-                }
-            });
-            
-            return asyncB;
+    function match(callbacks) {
+        readySuccess(this, callbacks.success);
+        readyError(this, callbacks.error);
+    }
+
+    function readySuccess(async, successAction) {
+        if (async.isSuccess) {
+            successAction(async.value);
+        }
+        else {
+            async.successActions.push(successAction);
+        }
+    }
+
+    function readyError(async, errorAction) {
+        if (async.isError) {
+            errorAction(async.error);
+        }
+        else {
+            async.errorActions.push(errorAction);
+        }
+    }
+
+    function completeSuccess(async, value) {
+        if (async.isSuccess) {
+            return;
+        }
+        
+        async.value = value;
+        async.isSuccess = true;
+        
+        for (var i = 0, l = async.successActions.length; i < l; i++) {
+            async.successActions[i](value);
+        }
+        
+        async.successActions = null;
+    }
+
+    function completeError(async, err) {  
+        if (async.isSuccess || async.isError) {
+            return;
+        }
+        
+        async.isError = true;
+        async.error = err;
+        
+        for (var i = 0, l = async.errorActions.length; i < l; i++) {
+            async.errorActions[i](err);
         }
 
-        return asyncA;
+        async.errorActions = null;
     }
-
-    //flatMap(asyncA: Async[A], fn: A => Async[B]): Async[B]
-    function flatMap(asyncA, fn) {
-        if (asyncA.isSuccess) {
-            return flatten(map(asyncA, fn));
-        }
-            
-        return asyncA;
-    }
-
 
     //flatten(nestedAsync: Async[Async[A]]): Async[A]
     function flatten(nestedAsync) {
         var flatAsync = new Async();
-
-        ready(nestedAsync, function(internalAsync) {
-            ready(internalAsync, function(a) {
-                try {
-                    completeSuccess(flatAsync, a);
-                } catch (e) {
-                    completeError(flatAsync, unexpectedError(e));
-                }
-            });
+        
+        //1 - outer isError && inner isError => output isError
+        //2 - outer isError && inner isSuccess => output isError
+        readyError(nestedAsync, function(e) { 
+            completeError(flatAsync, e);
         });
-
+        
+        //3 - outer isSuccess && inner isError => output isError 
+        readySuccess(nestedAsync, function(internalAsync) {
+            readyError(internalAsync, function(e) { 
+                completeError(flatAsync, e);
+            });           
+        }); 
+        
+        //4 - outer isSuccess && inner isSuccess => output isSuccess
+        readySuccess(nestedAsync, function(internalAsync) {
+            readySuccess(internalAsync, function(value) { 
+                completeSuccess(flatAsync, value); 
+            });
+        });      
+        
         return flatAsync;
     }
 
-    function completeSuccess(async, response) {
-        async.isSuccess = true;
-        async.success.value = response;
-        async.success.action && async.success.action(response);
-    }
-
-    function completeError(async, e) {
-        async.isSuccess = false;
-        async.error.value = e;
-        async.error.action && async.error.action(e);
-    }
-
-    function ready(async, successAction, errorAction) {
-        //storing actions to run lately if the Async is not completed yet
-        async.success.action = successAction;
-        async.error.action = async.error.action || errorAction;
-
-        if (async.isSuccess) {
-            if (async.success.value) {
-                //already completed; call and remove action to avoid further calls
-                async.success.action && async.success.action(async.success.value);
-                async.success.action = null;
-            }
-        } else {
-            if (async.error.value) {
-                //already completed; call and remove action to avoid further calls
-                async.error.action && async.error.action(async.error.value);
-                async.error.action = null;
-            }
-        }
-    }
-
     function requestError(jqXHR, textStatus, errorThrown) {
-        return {status: jqXHR.status, textStatus: textStatus, errorThrown: errorThrown};
+        return {responseCode: jqXHR.status, textStatus: textStatus, errorThrown: errorThrown};
     }
 
     function unexpectedError(e) {
-        return {status: 500, textStatus: 'Unexpected Error', errorThrown: e};
+        return {responseCode: undefined, textStatus: 'Unexpected Error', errorThrown: e};
     }
-
-    function doNothing(){}
 
 }(window.jQuery));
