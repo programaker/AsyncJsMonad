@@ -1,4 +1,4 @@
-(function defMonadLaws(Async) {
+(function defMonadLaws($, Async) {
 	'use strict';
 
 	var number = 456;
@@ -61,4 +61,4 @@
 		$('#third-law').text(message);
 	}(number, plusOne, toString));
 
-}(window.Async));
+}(window.jQuery, window.Async));

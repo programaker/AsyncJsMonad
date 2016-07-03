@@ -2,12 +2,6 @@
     'use strict';
 
     //Classic way of doing ajax in jQuery, with nested success callbacks.
-    //
-    //OK, I know $.ajax() returns a jqXHR object that acts like a Promise, avoiding callback hell,
-    //but most jQuery ajax code I see look like this.
-    //
-    //Moreover, jQuery ajax is not the worst problem; domain code that needs ajax internally frequently 
-    //adopt this design
     $.ajax({
         url: 'https://www.googleapis.com/youtube/v3/channels',
         dataType: 'jsonp',
@@ -48,6 +42,7 @@
         },
         error: error
     });
+
 
     function error(jqXHR, textStatus, errorThrown) {
         console.log('>>> error => ', {responseCode: jqXHR.status, textStatus: textStatus, errorThrown: errorThrown});

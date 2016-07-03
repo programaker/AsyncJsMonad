@@ -1,14 +1,16 @@
 (function defAsync($) {
     'use strict';
 
-    //Export module's public interface
+    //Async Module's public interface
     window.Async = {
         request: request,
-        unit: unit
+        unit: unit,
+        completeAsSuccess: completeAsSuccess,
+        completeAsError: completeAsError
     };
 
 
-    //The Async object
+    //Async object
     function Async() {
         //success case state
         this.isSuccess = false;
@@ -32,10 +34,10 @@
         
         $.ajax(config)
             .done(function ajaxSuccess(resp) {
-                completeSuccess(async, resp);
+                completeAsSuccess(async, resp);
             })
             .fail(function ajaxError(jqXHR, textStatus, errorThrown) {
-                completeError(async, requestError(jqXHR, textStatus, errorThrown));
+                completeAsError(async, requestError(jqXHR, textStatus, errorThrown));
             });
 
         return async;    
@@ -45,8 +47,8 @@
     //creates a successfully completed Async containing the value 'a'
     function unit(a) {
         var async = new Async();
-        async.value = a;
         async.isSuccess = true;
+        async.value = a;
         return async;
     }
 
@@ -54,16 +56,16 @@
     function map(fn) {
         var asyncB = new Async();
         
-        readSuccessIfReady(this, function(a) {
+        getSuccessValueIfReady(this, function(a) {
             try {
-                completeSuccess(asyncB, fn(a));
+                completeAsSuccess(asyncB, fn(a));
             } catch (e) {
-                completeError(asyncB, unexpectedError(e));
+                completeAsError(asyncB, unexpectedError(e));
             }
         });
 
-        readErrorIfReady(this, function(e) {
-            completeError(asyncB, unexpectedError(e));
+        getErrorValueIfReady(this, function(e) {
+            completeAsError(asyncB, unexpectedError(e));
         });
 
         return asyncB;
@@ -75,11 +77,11 @@
     }
 
     function match(callbacks) {
-        readSuccessIfReady(this, callbacks.success);
-        readErrorIfReady(this, callbacks.error);
+        getSuccessValueIfReady(this, callbacks.success);
+        getErrorValueIfReady(this, callbacks.error);
     }
 
-    function readSuccessIfReady(async, successAction) {
+    function getSuccessValueIfReady(async, successAction) {
         if (async.isSuccess) {
             successAction(async.value);
         }
@@ -88,7 +90,7 @@
         }
     }
 
-    function readErrorIfReady(async, errorAction) {
+    function getErrorValueIfReady(async, errorAction) {
         if (async.isError) {
             errorAction(async.error);
         }
@@ -97,7 +99,7 @@
         }
     }
 
-    function completeSuccess(async, value) {
+    function completeAsSuccess(async, value) {
         if (async.isSuccess) {
             return;
         }
@@ -109,10 +111,10 @@
             async.successActions[i](value);
         }
         
-        async.successActions = null;
+        async.successActions = [];
     }
 
-    function completeError(async, err) {  
+    function completeAsError(async, err) {  
         if (async.isSuccess || async.isError) {
             return;
         }
@@ -124,7 +126,7 @@
             async.errorActions[i](err);
         }
 
-        async.errorActions = null;
+        async.errorActions = [];
     }
 
     //flatten(nestedAsync: Async[Async[A]]): Async[A]
@@ -133,21 +135,21 @@
         
         //1 - outer isError && inner isError => output isError
         //2 - outer isError && inner isSuccess => output isError
-        readErrorIfReady(nestedAsync, function(e) { 
-            completeError(flatAsync, e);
+        getErrorValueIfReady(nestedAsync, function(e) { 
+            completeAsError(flatAsync, e);
         });
         
         //3 - outer isSuccess && inner isError => output isError 
-        readSuccessIfReady(nestedAsync, function(internalAsync) {
-            readErrorIfReady(internalAsync, function(e) { 
-                completeError(flatAsync, e);
+        getSuccessValueIfReady(nestedAsync, function(internalAsync) {
+            getErrorValueIfReady(internalAsync, function(e) { 
+                completeAsError(flatAsync, e);
             });           
         }); 
         
         //4 - outer isSuccess && inner isSuccess => output isSuccess
-        readSuccessIfReady(nestedAsync, function(internalAsync) {
-            readSuccessIfReady(internalAsync, function(value) { 
-                completeSuccess(flatAsync, value); 
+        getSuccessValueIfReady(nestedAsync, function(internalAsync) {
+            getSuccessValueIfReady(internalAsync, function(value) { 
+                completeAsSuccess(flatAsync, value); 
             });
         });      
         
