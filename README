@@ -1,0 +1,3 @@
+The Async module allows asynchronous operation chaining in monadic style (map, flatMap, unit...), eliminating nested callbacks.
+
+Yes, I know Promises solve this problem, but I wanted to have some fun =P
