@@ -202,7 +202,7 @@
     }
 
     function unexpectedError(e) {
-        return {responseCode: undefined, textStatus: 'Unexpected Error', errorThrown: e};
+        return {responseCode: 0, textStatus: 'Unexpected Error', errorThrown: e};
     }
 
 }(window.jQuery));

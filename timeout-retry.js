@@ -1,84 +1,31 @@
 (function defTimeoutRetry($, Async) {
     'use strict';
 
-    var channelsRequestData = {
-        url: 'https://www.googleapis.com/youtube/v3/channels',
-        dataType: 'jsonp',
-        jsonp: 'callback',
-        data: {
-            key: 'AIzaSyDQOzdypbd04-ExD90xUVPoEG2Hfx7X3X8',
-            part: 'snippet',
-            id: 'UCEWHPFNilsT0IfQfutVzsag,UCsXVk37bltHxD1rDPwtNM8Q,UCvzvWfxeFWZDUH835lMAwEg,UCHCph-_jLba_9atyCZJPLQQ'
-        },
+    Async.request({
+        url: 'http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/rest/index.cfm/obterTodasPosicoes',
         beforeSend: function() {
             console.log('>>> will make an ajax request...');
         },
         //including timeout configuration
-        timeout: 1, //<= 1ms to force retries
+        timeout: 300, //<= with this timeout, sometimes it will work; sometimes will need to retry
         timeoutConfig: {
             retry: true,
             attempts: 10
         }
-    };
-
-    //This example is slightly different from "success-detailed.js" because I wanted to show the Async.unit() function.
-    //There, I started directly from Async.request()
-    Async.unit(channelsRequestData)
-        .flatMap(Async.request)
-        .map(chooseRandomChannel)
-        .flatMap(requestVideosFromChannel)
-        .map(chooseRandomVideo)
-        .map(convertToSimpleVideo)
-        .on({
-            success: function(simpleVideo) {
-                console.log('>>> success => ', simpleVideo);
-                $('#thumb').attr('src', simpleVideo.videoThumbnailUrl);
-                $('#error').text('');
-            },
-            error: function(e) {
-                console.log('>>> error => ', e);
-                $('#thumb').attr('src', '');
-                $('#error').text(e.textStatus);
-            },
-            complete: function() {
-                console.log('>>> done');
-            }
-        });
-
-
-    function chooseRandomChannel(channels) {
-        return channels.items[randomIntBetween(0, 3)];
-    }
-
-    function requestVideosFromChannel(chosenChannel) {
-        return Async.request({
-            url: 'https://www.googleapis.com/youtube/v3/search',
-            dataType: 'jsonp',
-            jsonp: 'callback',
-            data: {
-                key: 'AIzaSyDQOzdypbd04-ExD90xUVPoEG2Hfx7X3X8',
-                part: 'snippet',
-                type: 'video',
-                order: 'date',
-                maxResults: 10,
-                channelId: chosenChannel.id
-            }
-        });
-    }
-
-    function chooseRandomVideo(channelLastVideos) {
-        return channelLastVideos.items[randomIntBetween(0, 9)];
-    }
-
-    function convertToSimpleVideo(chosenVideo) {
-        return {
-            videoId: chosenVideo.id.videoId,
-            videoThumbnailUrl: chosenVideo.snippet.thumbnails.high.url
-        };
-    }
-
-    function randomIntBetween(min, max) {
-        return Math.floor(Math.random() * (max - min + 1) + min);
-    }
+    }).on({
+        success: function(busPositions) {
+            console.log('>>> success => ', busPositions);
+            $('#bus').text(busPositions['COLUMNS'][1] + ' = ' + busPositions['DATA'][0][1]);
+            $('#error').text('');
+        },
+        error: function(e) {
+            console.log('>>> error => ', e);
+            $('#bus').text('');
+            $('#error').text(e.textStatus);
+        },
+        complete: function() {
+            console.log('>>> done');
+        }
+    });
 
 }(window.jQuery, window.Async));
