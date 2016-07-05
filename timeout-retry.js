@@ -7,10 +7,10 @@
             console.log('>>> will make an ajax request...');
         },
         //including timeout configuration
-        timeout: 300, //<= with this timeout, sometimes it will work; sometimes will need to retry
+        timeout: 265,
         timeoutConfig: {
             retry: true,
-            attempts: 10
+            attempts: 9
         }
     }).on({
         success: function(busPositions) {

@@ -51,6 +51,7 @@
         var timeoutConfig = _config.timeoutConfig || {};
 
         //add configs we want in jquery
+        //success function is set here because it does not change when retrying
         _config.success = function ajaxSuccess(resp) { 
             completeAsSuccess(async, resp);
         };
