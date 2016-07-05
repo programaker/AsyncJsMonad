@@ -1,4 +1,4 @@
-(function defSuccessChaining($, Async) {
+(function defTimeoutRetry($, Async) {
     'use strict';
 
     var channelsRequestData = {
@@ -12,6 +12,12 @@
         },
         beforeSend: function() {
             console.log('>>> will make an ajax request...');
+        },
+        //including timeout configuration
+        timeout: 1, //<= 1ms to force retries
+        timeoutConfig: {
+            retry: true,
+            attempts: 10
         }
     };
 
@@ -27,10 +33,12 @@
             success: function(simpleVideo) {
                 console.log('>>> success => ', simpleVideo);
                 $('#thumb').attr('src', simpleVideo.videoThumbnailUrl);
+                $('#error').text('');
             },
             error: function(e) {
                 console.log('>>> error => ', e);
                 $('#thumb').attr('src', '');
+                $('#error').text(e.textStatus);
             },
             complete: function() {
                 console.log('>>> done');

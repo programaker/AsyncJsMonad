@@ -54,7 +54,7 @@
     });
 
     //finally, handle the results!
-    asyncSimpleVideo.match({
+    asyncSimpleVideo.on({
         success: function(simpleVideo) {
             console.log('>>> success => ', simpleVideo);
             $('#error').text('');
@@ -62,6 +62,9 @@
         error: function(e) {
             console.log('>>> error => ', e);
             $('#error').text(e.textStatus);
+        },
+        complete: function() {
+            console.log('>>> done');
         }
     });
 

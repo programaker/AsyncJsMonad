@@ -3,12 +3,11 @@
 
     //Async Module's public interface
     window.Async = {
-        request: request,
         unit: unit,
+        request: request,
         completeAsSuccess: completeAsSuccess,
         completeAsError: completeAsError
     };
-
 
     //Async object
     function Async() {
@@ -21,27 +20,19 @@
         this.isError = false;
         this.error = null;
         this.errorActions = [];
+
+        //complete action that runs once after all success or all error actions
+        this.completeAction = null;
     }
     Async.prototype = {
         map: map,
         flatMap: flatMap,
-        match: match
+        on: on
     };
 
-
-    function request(config) {
-        var async = new Async();
-        
-        $.ajax(config)
-            .done(function ajaxSuccess(resp) {
-                completeAsSuccess(async, resp);
-            })
-            .fail(function ajaxError(jqXHR, textStatus, errorThrown) {
-                completeAsError(async, requestError(jqXHR, textStatus, errorThrown));
-            });
-
-        return async;    
-    }
+    var Retry = {
+        DEFAULT_ATTEMPTS: 3
+    };
 
     //unit(a: A): Async[A]
     //creates a successfully completed Async containing the value 'a'
@@ -52,9 +43,50 @@
         return async;
     }
 
+    function request(config) {
+        var async = new Async();
+
+        var _config = $.extend({}, config);
+        var beforeSend = _config.beforeSend;
+        var timeoutConfig = _config.timeoutConfig || {};
+
+        //add configs we want in jquery
+        _config.success = function ajaxSuccess(resp) { 
+            completeAsSuccess(async, resp);
+        };
+
+        //remove configs we don't want jquery to use
+        delete _config.beforeSend;
+        delete _config.timeoutConfig;
+        delete _config.complete;
+
+        beforeSend && beforeSend();
+        runAjax(async, _config, timeoutConfig.retry, (timeoutConfig.attempts || Retry.DEFAULT_ATTEMPTS));
+
+        return async;
+    }
+
+    function runAjax(async, ajaxConfig, retry, attempts) {
+        //error function changes with the number of attemps in each retry
+        ajaxConfig.error = ajaxErrorFn(async, ajaxConfig, retry, attempts);
+        $.ajax(ajaxConfig);
+    }
+
+    function ajaxErrorFn(async, ajaxConfig, retry, attempts) {
+        return function ajaxError(jqXHR, textStatus, errorThrown) {
+            if (errorThrown === 'timeout' && retry && attempts > 0) {
+                runAjax(async, ajaxConfig, retry, attempts - 1);
+            }
+            else {
+                completeAsError(async, requestError(jqXHR, textStatus, errorThrown));
+            }
+        };
+    }
+
     //Async[A].map(fn: A => B): Async[B]
     function map(fn) {
         var asyncB = new Async();
+        asyncB.completeAction = this.completeAction;
         
         getSuccessValueIfReady(this, function(a) {
             try {
@@ -76,7 +108,8 @@
         return flatten(this.map(fn));
     }
 
-    function match(callbacks) {
+    function on(callbacks) {
+        this.completeAction = callbacks.complete;
         getSuccessValueIfReady(this, callbacks.success);
         getErrorValueIfReady(this, callbacks.error);
     }
@@ -112,6 +145,7 @@
         }
         
         async.successActions = [];
+        done(async);
     }
 
     function completeAsError(async, err) {  
@@ -127,11 +161,18 @@
         }
 
         async.errorActions = [];
+        done(async);
+    }
+
+    function done(async) {
+        async.completeAction && async.completeAction();
+        async.completeAction = null;
     }
 
     //flatten(nestedAsync: Async[Async[A]]): Async[A]
     function flatten(nestedAsync) {
         var flatAsync = new Async();
+        flatAsync.completeAction = nestedAsync.completeAction;
         
         //1 - outer isError && inner isError => output isError
         //2 - outer isError && inner isSuccess => output isError

@@ -54,7 +54,7 @@
     });
 
     //finally, handle the results!
-    asyncSimpleVideo.match({
+    asyncSimpleVideo.on({
         success: function(simpleVideo) {
             console.log('>>> success => ', simpleVideo);
             $('#thumb').attr('src', simpleVideo.videoThumbnailUrl);
@@ -62,6 +62,9 @@
         error: function(e) {
             console.log('>>> error => ', e);
             $('#thumb').attr('src', '');
+        },
+        complete: function() {
+            console.log('>>> done');
         }
     });
 
