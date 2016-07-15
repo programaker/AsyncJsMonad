@@ -1,6 +1,5 @@
-(function defCallbackHell($) {
-    'use strict';
-
+//Page modules can be auto-exec, or else no one will execute them
+(function CallbackHellPage($) {
     //Classic way of doing ajax in jQuery, with nested success callbacks.
     $.ajax({
         url: 'https://www.googleapis.com/youtube/v3/channels',
@@ -11,7 +10,7 @@
             part: 'snippet',
             id: 'UCEWHPFNilsT0IfQfutVzsag,UCsXVk37bltHxD1rDPwtNM8Q,UCvzvWfxeFWZDUH835lMAwEg,UCHCph-_jLba_9atyCZJPLQQ'
         },
-        success: function(channels) {
+        success: function gotChannels(channels) {
             var chosenChannel = channels.items[randomIntBetween(0, 3)];
 
             $.ajax({
@@ -26,7 +25,7 @@
                     maxResults: 10,
                     channelId: chosenChannel.id
                 },
-                success: function(channelLastVideos) {
+                success: function gotChannelLastVideos(channelLastVideos) {
                     var chosenVideo = channelLastVideos.items[randomIntBetween(0, 9)];
                     
                     var simpleVideo = {
@@ -37,14 +36,14 @@
                     console.log('>>> success => ', simpleVideo);
                     $('#thumb').attr('src', simpleVideo.videoThumbnailUrl);
                 },
-                error: error
+                error: logError
             });
         },
-        error: error
+        error: logError
     });
 
 
-    function error(jqXHR, textStatus, errorThrown) {
+    function logError(jqXHR, textStatus, errorThrown) {
         console.log('>>> error => ', {responseCode: jqXHR.status, textStatus: textStatus, errorThrown: errorThrown});
         $('#thumb').attr('src', '');
     }

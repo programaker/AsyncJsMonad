@@ -1,6 +1,5 @@
-(function defSuccessChaining($, Async) {
-    'use strict';
-
+//Page modules can be auto-exec, or else no one will execute them
+(function SuccessChainingPage($, Async) {
     var channelsRequestData = {
         url: 'https://www.googleapis.com/youtube/v3/channels',
         dataType: 'jsonp',
@@ -10,40 +9,36 @@
             part: 'snippet',
             id: 'UCEWHPFNilsT0IfQfutVzsag,UCsXVk37bltHxD1rDPwtNM8Q,UCvzvWfxeFWZDUH835lMAwEg,UCHCph-_jLba_9atyCZJPLQQ'
         },
-        beforeSend: function() {
-            console.log('>>> will make an ajax request...');
-        }
+        beforeSend: logRequestAboutToHappen
     };
 
-    //This example is slightly different from "success-detailed.js" because I wanted to show the Async.unit() function.
-    //There, I started directly from Async.request()
-    Async.unit(channelsRequestData)
-        .flatMap(Async.request)
+    var async = new Async($); //<= 2nd way to get an Async instance: with new operator
+
+    //This example is slightly different from "success-detailed.js" because I wanted to show the async.unit() function.
+    //There, I started directly from async.request()
+    async.unit(channelsRequestData)
+        .flatMap(async.request)
         .map(chooseRandomChannel)
         .flatMap(requestVideosFromChannel)
         .map(chooseRandomVideo)
         .map(convertToSimpleVideo)
         .on({
-            success: function(simpleVideo) {
-                console.log('>>> success => ', simpleVideo);
-                $('#thumb').attr('src', simpleVideo.videoThumbnailUrl);
-            },
-            error: function(e) {
-                console.log('>>> error => ', e);
-                $('#thumb').attr('src', '');
-            },
-            complete: function() {
-                console.log('>>> done');
-            }
+            success: displaySimpleVideo,
+            error: logError,
+            complete: logCompletion
         });
 
+
+    function logRequestAboutToHappen() {
+        console.log('>>> will make an ajax request...');
+    }
 
     function chooseRandomChannel(channels) {
         return channels.items[randomIntBetween(0, 3)];
     }
 
     function requestVideosFromChannel(chosenChannel) {
-        return Async.request({
+        return async.request({
             url: 'https://www.googleapis.com/youtube/v3/search',
             dataType: 'jsonp',
             jsonp: 'callback',
@@ -71,6 +66,20 @@
 
     function randomIntBetween(min, max) {
         return Math.floor(Math.random() * (max - min + 1) + min);
+    }
+
+    function displaySimpleVideo(simpleVideo) {
+        console.log('>>> success => ', simpleVideo);
+        $('#thumb').attr('src', simpleVideo.videoThumbnailUrl);
+    }
+
+    function logError(e) {
+        console.log('>>> error => ', e);
+        $('#thumb').attr('src', '');
+    }
+
+    function logCompletion() {
+        console.log('>>> done');
     }
 
 }(window.jQuery, window.Async));

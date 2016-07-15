@@ -1,9 +1,8 @@
-(function defTimeoutRetry($, Async) {
-    'use strict';
-
-    Async.request({
+//Page modules can be auto-exec, or else no one will execute them
+(function TimeoutRetryPage($, Async) {
+    Async($).request({
         url: 'http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/rest/index.cfm/obterTodasPosicoes',
-        beforeSend: function() {
+        beforeSend: function logRequestAboutToHappen() {
             console.log('>>> will make an ajax request...');
         },
         //including timeout configuration
@@ -13,17 +12,17 @@
             attempts: 9
         }
     }).on({
-        success: function(busPositions) {
+        success: function displaySampleBusPosition(busPositions) {
             console.log('>>> success => ', busPositions);
             $('#bus').text(busPositions['COLUMNS'][1] + ' = ' + busPositions['DATA'][0][1]);
             $('#error').text('');
         },
-        error: function(e) {
+        error: function displayError(e) {
             console.log('>>> error => ', e);
             $('#bus').text('');
             $('#error').text(e.textStatus);
         },
-        complete: function() {
+        complete: function logCompletion() {
             console.log('>>> done');
         }
     });
