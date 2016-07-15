@@ -1,14 +1,19 @@
-//Async module factory function
+//Async module constructor function
 //It is not an auto-exec function, so that we can execute it just when it's really needed
-//Module external dependencies are still explicit as arguments
 //
 //Async module can be created like "var async = Async(jQuery)" or "var async = new Async(jQuery)";
 //both generate the sabe result
+//
+//Module external dependencies are still explicit as arguments
+//Here, jQuery dependency expressed in the argument
 function Async($) {
+    
     //Module's public interface - the Async module itself
+    //Only the functions stored in this object will be exported to the outside world
+    //Everything else is private
     //
-    //It could be an anonymous object defined directly at 'return', but this way
-    //we can see the module's setup top-down, what I think is more readable
+    //It could be an anonymous object defined directly at the 'return' statement, 
+    //but this way we have a top-down reasoning that gives priority to module's public services
     var AsyncModule = {
         unit: unit,
         request: request,
@@ -16,7 +21,8 @@ function Async($) {
         completeAsError: completeAsError
     };
 
-    //AsyncData object, which carries the result of the async operation
+
+    //AsyncData helper object, which carries the result of the async operation
     //and allows monadic chaining of operations
     function AsyncData() {
         //success case state
@@ -35,23 +41,26 @@ function Async($) {
     AsyncData.prototype = {
         //AsyncData[A].map(fn: A => B): AsyncData[B]
         map: function(fn) { 
+            var asyncA = this;
+
             var asyncB = new AsyncData();
-            asyncB.completeAction = this.completeAction;
+            asyncB.completeAction = asyncA.completeAction;
             
-            getSuccessValueIfReady(this, function(a) {
+            getSuccessValueIfReady(asyncA, function successReady(a) {
                 completeAsSuccess(asyncB, fn(a));
             });
 
-            getErrorValueIfReady(this, function(e) {
+            getErrorValueIfReady(asyncA, function errorReady(e) {
                 completeAsError(asyncB, unexpectedError(e));
             });
 
             return asyncB; 
         },
 
-        //AsyncData[A].flatMap(fn: A => AsyncData[B): AsyncData[B]
+        //AsyncData[A].flatMap(fn: A => AsyncData[B]): AsyncData[B]
         flatMap: function(fn) { 
-            return flatten(this.map(fn));
+            var asyncA = this;
+            return flatten(asyncA.map(fn));
         },
 
         on: function(callbacks) { 
@@ -61,9 +70,11 @@ function Async($) {
         }
     };
 
+
     var Retry = {
         DEFAULT_ATTEMPTS: 3
     };
+
 
     //unit(a: A): AsyncData[A]
     //creates a successfully completed AsyncData containing the value 'a'
@@ -174,20 +185,20 @@ function Async($) {
         
         //1 - outer isError && inner isError => output isError
         //2 - outer isError && inner isSuccess => output isError
-        getErrorValueIfReady(nestedAsync, function(e) { 
+        getErrorValueIfReady(nestedAsync, function outerAndInnerAreErrors(e) { 
             completeAsError(flatAsync, e);
         });
         
         //3 - outer isSuccess && inner isError => output isError 
-        getSuccessValueIfReady(nestedAsync, function(internalAsync) {
-            getErrorValueIfReady(internalAsync, function(e) { 
+        getSuccessValueIfReady(nestedAsync, function outerIsSuccessInnerIsError(innerAsync) {
+            getErrorValueIfReady(innerAsync, function innerIsError(e) { 
                 completeAsError(flatAsync, e);
             });           
         }); 
         
         //4 - outer isSuccess && inner isSuccess => output isSuccess
-        getSuccessValueIfReady(nestedAsync, function(internalAsync) {
-            getSuccessValueIfReady(internalAsync, function(value) { 
+        getSuccessValueIfReady(nestedAsync, function outerAndInnerAreSuccesses(innerAsync) {
+            getSuccessValueIfReady(innerAsync, function innerIsSuccess(value) { 
                 completeAsSuccess(flatAsync, value); 
             });
         });      
@@ -203,6 +214,8 @@ function Async($) {
         return {responseCode: 0, textStatus: 'Unexpected Error', errorThrown: e};
     }
 
-    //Finally, returns module public interface defined on the top
+
+    //Finally, returns module's public interface defined on the top
+    //Again, this object could be defined here, but we would lose the top-down reasoning
     return AsyncModule;
 }

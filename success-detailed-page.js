@@ -15,13 +15,13 @@
 
     //choose one of the channels randomly
     //Async[List[YoutubeChannel]] => Async[YoutubeChannel]
-    var asyncChosenChannel = asyncChannels.map(function(channels) {
+    var asyncChosenChannel = asyncChannels.map(function chooseRandomChannel(channels) {
         return channels.items[randomIntBetween(0, 3)];
     });
 
     //request the last 10 videos of the chosen channel
     //Async[YoutubeChannel] => Async[List[YoutubeVideo]]
-    var asyncChannelLastVideos = asyncChosenChannel.flatMap(function(chosenChannel) {
+    var asyncChannelLastVideos = asyncChosenChannel.flatMap(function requestVideosFromChannel(chosenChannel) {
         return async.request({
             url: 'https://www.googleapis.com/youtube/v3/search',
             dataType: 'jsonp',
@@ -39,13 +39,13 @@
 
     //get one of the videos randomly
     //Async[List[YoutubeVideo]] => Async[YoutubeVideo]
-    var asyncChosenVideo = asyncChannelLastVideos.map(function(channelLastVideos) {
+    var asyncChosenVideo = asyncChannelLastVideos.map(function chooseRandomVideo(channelLastVideos) {
         return channelLastVideos.items[randomIntBetween(0, 9)];
     });
 
     //transform the video object in another with only id and high-res thumbnail url
     //Async[YoutubeVideo] => Async[SimpleVideo]
-    var asyncSimpleVideo = asyncChosenVideo.map(function(chosenVideo) {
+    var asyncSimpleVideo = asyncChosenVideo.map(function convertToSimpleVideo(chosenVideo) {
         return {
             videoId: chosenVideo.id.videoId,
             videoThumbnailUrl: chosenVideo.snippet.thumbnails.high.url
@@ -54,15 +54,15 @@
 
     //finally, handle the results!
     asyncSimpleVideo.on({
-        success: function(simpleVideo) {
+        success: function displaySimpleVideo(simpleVideo) {
             console.log('>>> success => ', simpleVideo);
             $('#thumb').attr('src', simpleVideo.videoThumbnailUrl);
         },
-        error: function(e) {
+        error: function logError(e) {
             console.log('>>> error => ', e);
             $('#thumb').attr('src', '');
         },
-        complete: function() {
+        complete: function logCompletion() {
             console.log('>>> done');
         }
     });
