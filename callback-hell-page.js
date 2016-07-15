@@ -1,6 +1,5 @@
-(function defCallbackHell($) {
-    'use strict';
-
+//Page modules can be auto-exec, or else no one will execute them
+(function CallbackHellPage($) {
     //Classic way of doing ajax in jQuery, with nested success callbacks.
     $.ajax({
         url: 'https://www.googleapis.com/youtube/v3/channels',

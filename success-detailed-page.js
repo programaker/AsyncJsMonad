@@ -1,9 +1,10 @@
-(function defSuccessDetailed($, Async) {
-    'use strict';
+//Page modules can be auto-exec, or else no one will execute them
+(function SuccessDetailedPage($, Async) {
+    var async = Async($);
 
     //request 4 Youtube channels by id
     // => Async[List[YoutubeChannel]]
-    var asyncChannels = Async.request({
+    var asyncChannels = async.request({
         url: 'https://www.googleapis.com/youtube/v3/channels',
         dataType: 'jsonp',
         jsonp: 'callback',
@@ -23,7 +24,7 @@
     //request the last 10 videos of the chosen channel
     //Async[YoutubeChannel] => Async[List[YoutubeVideo]]
     var asyncChannelLastVideos = asyncChosenChannel.flatMap(function(chosenChannel) {
-        return Async.request({
+        return async.request({
             url: 'https://www.googleapis.com/youtube/v3/search',
             dataType: 'jsonp',
             jsonp: 'callback',
@@ -67,7 +68,6 @@
             console.log('>>> done');
         }
     });
-
 
     function randomIntBetween(min, max) {
         return Math.floor(Math.random() * (max - min + 1) + min);

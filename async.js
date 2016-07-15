@@ -1,16 +1,24 @@
-(function defAsync($) {
-    'use strict';
-
-    //Async Module's public interface
-    window.Async = {
+//Async module factory function
+//It is not an auto-exec function, so that we can execute it just when it's really needed
+//Module external dependencies are still explicit
+//
+//Async module can be created like "var async = Async(jQuery)" or "var async = new Async(jQuery)";
+//both generate the sabe result
+function Async($) {
+    //Module's public interface - the Async module itself
+    //
+    //It could be an anonymous object defined directly at 'return', but this way
+    //we can see the module's setup top-down, what I think is more readable
+    var PublicInterface = {
         unit: unit,
         request: request,
         completeAsSuccess: completeAsSuccess,
         completeAsError: completeAsError
     };
 
-    //Async object
-    function Async() {
+    //AsyncData object, which carries the result of the async operation
+    //and allows monadic chaining of operations
+    function AsyncData() {
         //success case state
         this.isSuccess = false;
         this.value = null;
@@ -24,27 +32,50 @@
         //complete action that runs once after all success or all error actions
         this.completeAction = null;
     }
-    Async.prototype = {
-        map: map,
-        flatMap: flatMap,
-        on: on
+    AsyncData.prototype = {
+        //AsyncData[A].map(fn: A => B): AsyncData[B]
+        map: function(fn) { 
+            var asyncB = new AsyncData();
+            asyncB.completeAction = this.completeAction;
+            
+            getSuccessValueIfReady(this, function(a) {
+                completeAsSuccess(asyncB, fn(a));
+            });
+
+            getErrorValueIfReady(this, function(e) {
+                completeAsError(asyncB, unexpectedError(e));
+            });
+
+            return asyncB; 
+        },
+
+        //AsyncData[A].flatMap(fn: A => AsyncData[B): AsyncData[B]
+        flatMap: function(fn) { 
+            return flatten(this.map(fn));
+        },
+
+        on: function(callbacks) { 
+            this.completeAction = callbacks.complete;
+            getSuccessValueIfReady(this, callbacks.success);
+            getErrorValueIfReady(this, callbacks.error);
+        }
     };
 
     var Retry = {
         DEFAULT_ATTEMPTS: 3
     };
 
-    //unit(a: A): Async[A]
-    //creates a successfully completed Async containing the value 'a'
+    //unit(a: A): AsyncData[A]
+    //creates a successfully completed AsyncData containing the value 'a'
     function unit(a) {
-        var async = new Async();
+        var async = new AsyncData();
         async.isSuccess = true;
         async.value = a;
         return async;
     }
 
     function request(config) {
-        var async = new Async();
+        var async = new AsyncData();
 
         var _config = $.extend({}, config);
         var beforeSend = _config.beforeSend;
@@ -77,49 +108,16 @@
         return function ajaxError(jqXHR, textStatus, errorThrown) {
             if (errorThrown === 'timeout' && retry && attempts > 0) {
                 runAjax(async, ajaxConfig, retry, attempts - 1);
-            }
-            else {
+            } else {
                 completeAsError(async, requestError(jqXHR, textStatus, errorThrown));
             }
         };
     }
 
-    //Async[A].map(fn: A => B): Async[B]
-    function map(fn) {
-        var asyncB = new Async();
-        asyncB.completeAction = this.completeAction;
-        
-        getSuccessValueIfReady(this, function(a) {
-            try {
-                completeAsSuccess(asyncB, fn(a));
-            } catch (e) {
-                completeAsError(asyncB, unexpectedError(e));
-            }
-        });
-
-        getErrorValueIfReady(this, function(e) {
-            completeAsError(asyncB, unexpectedError(e));
-        });
-
-        return asyncB;
-    }
-
-    //Async[A].flatMap(fn: A => Async[B]): Async[B]
-    function flatMap(fn) {
-        return flatten(this.map(fn));
-    }
-
-    function on(callbacks) {
-        this.completeAction = callbacks.complete;
-        getSuccessValueIfReady(this, callbacks.success);
-        getErrorValueIfReady(this, callbacks.error);
-    }
-
     function getSuccessValueIfReady(async, successAction) {
         if (async.isSuccess) {
             successAction(async.value);
-        }
-        else {
+        } else {
             async.successActions.push(successAction);
         }
     }
@@ -127,8 +125,7 @@
     function getErrorValueIfReady(async, errorAction) {
         if (async.isError) {
             errorAction(async.error);
-        }
-        else {
+        } else {
             async.errorActions.push(errorAction);
         }
     }
@@ -170,9 +167,9 @@
         async.completeAction = null;
     }
 
-    //flatten(nestedAsync: Async[Async[A]]): Async[A]
+    //flatten(nestedAsync: AsyncData[AsyncData[A]]): AsyncData[A]
     function flatten(nestedAsync) {
-        var flatAsync = new Async();
+        var flatAsync = new AsyncData();
         flatAsync.completeAction = nestedAsync.completeAction;
         
         //1 - outer isError && inner isError => output isError
@@ -206,4 +203,5 @@
         return {responseCode: 0, textStatus: 'Unexpected Error', errorThrown: e};
     }
 
-}(window.jQuery));
+    return PublicInterface;
+}

@@ -1,6 +1,5 @@
-(function defSuccessChaining($, Async) {
-    'use strict';
-
+//Page modules can be auto-exec, or else no one will execute them
+(function SuccessChainingPage($, Async) {
     var channelsRequestData = {
         url: 'https://www.googleapis.com/youtube/v3/channels',
         dataType: 'jsonp',
@@ -15,10 +14,12 @@
         }
     };
 
+    var async = Async($);
+
     //This example is slightly different from "success-detailed.js" because I wanted to show the Async.unit() function.
     //There, I started directly from Async.request()
-    Async.unit(channelsRequestData)
-        .flatMap(Async.request)
+    async.unit(channelsRequestData)
+        .flatMap(async.request)
         .map(chooseRandomChannel)
         .flatMap(requestVideosFromChannel)
         .map(chooseRandomVideo)
@@ -43,7 +44,7 @@
     }
 
     function requestVideosFromChannel(chosenChannel) {
-        return Async.request({
+        return async.request({
             url: 'https://www.googleapis.com/youtube/v3/search',
             dataType: 'jsonp',
             jsonp: 'callback',
