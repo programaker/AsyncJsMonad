@@ -1,6 +1,6 @@
 //Async module factory function
 //It is not an auto-exec function, so that we can execute it just when it's really needed
-//Module external dependencies are still explicit
+//Module external dependencies are still explicit as arguments
 //
 //Async module can be created like "var async = Async(jQuery)" or "var async = new Async(jQuery)";
 //both generate the sabe result
@@ -9,7 +9,7 @@ function Async($) {
     //
     //It could be an anonymous object defined directly at 'return', but this way
     //we can see the module's setup top-down, what I think is more readable
-    var PublicInterface = {
+    var AsyncModule = {
         unit: unit,
         request: request,
         completeAsSuccess: completeAsSuccess,
@@ -203,5 +203,6 @@ function Async($) {
         return {responseCode: 0, textStatus: 'Unexpected Error', errorThrown: e};
     }
 
-    return PublicInterface;
+    //Finally, returns module public interface defined on the top
+    return AsyncModule;
 }

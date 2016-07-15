@@ -1,6 +1,6 @@
 //Page modules can be auto-exec, or else no one will execute them
 (function CheckMonadLawsPage($, Async) {
-	var async = Async($);
+	var async = Async($); //<= 1st way to get an Async instance: direct constructor function call
 	var number = 456;
 	function plusOne(n){ return async.unit(n + 1) }
 	function toString(n){ return async.unit('' + n) }

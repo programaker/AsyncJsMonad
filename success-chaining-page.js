@@ -14,7 +14,7 @@
         }
     };
 
-    var async = Async($);
+    var async = new Async($); //<= 2nd way to get an Async instance: with new operator
 
     //This example is slightly different from "success-detailed.js" because I wanted to show the Async.unit() function.
     //There, I started directly from Async.request()
