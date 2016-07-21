@@ -1,5 +1,7 @@
-//Page modules can be auto-exec, or else no one will execute them
-(function SuccessDetailedPage($, async) { //<= 3rd way to get an Async instance: inject into Page module as a dependency
+//Page modules can be auto-exec or alternativelly an argument to $(document).ready()
+(function SuccessDetailedPage() { //<= 3rd way to get an Async instance: inject into Page module as a dependency
+    var async = Async();
+
     //request 4 Youtube channels by id
     // => Async[List[YoutubeChannel]]
     var asyncChannels = async.request({
@@ -70,5 +72,4 @@
     function randomIntBetween(min, max) {
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
-
-}( window.jQuery, window.Async(window.jQuery) ));
+}());

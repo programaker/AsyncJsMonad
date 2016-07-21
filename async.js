@@ -1,12 +1,9 @@
 //Async module constructor function
 //It is not an auto-exec function, so that we can execute it just when it's really needed
 //
-//Async module can be created like "var async = Async(jQuery)" or "var async = new Async(jQuery)";
+//Async module can be created like "var async = Async()" or "var async = new Async()";
 //both generate the sabe result
-//
-//Module external dependencies are still explicit as arguments
-//Here, jQuery dependency expressed in the argument
-function Async($) {
+function Async() {
     
     //Module's public interface - the Async module itself
     //Only the functions stored in this object will be exported to the outside world
@@ -92,13 +89,13 @@ function Async($) {
         var beforeSend = _config.beforeSend;
         var timeoutConfig = _config.timeoutConfig || {};
 
-        //add configs we want in jquery
+        //add configs we want in jQuery
         //success function is set here because it does not change when retrying
         _config.success = function ajaxSuccess(resp) { 
             completeAsSuccess(async, resp);
         };
 
-        //remove configs we don't want jquery to use
+        //remove configs we don't want jQuery to use
         delete _config.beforeSend;
         delete _config.timeoutConfig;
         delete _config.complete;

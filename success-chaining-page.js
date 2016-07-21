@@ -1,5 +1,5 @@
-//Page modules can be auto-exec, or else no one will execute them
-(function SuccessChainingPage($, Async) {
+//Page modules can be auto-exec or alternativelly an argument to $(document).ready()
+(function SuccessChainingPage() {
     var channelsRequestData = {
         url: 'https://www.googleapis.com/youtube/v3/channels',
         dataType: 'jsonp',
@@ -81,5 +81,4 @@
     function logCompletion() {
         console.log('>>> done');
     }
-
-}(window.jQuery, window.Async));
+}());
