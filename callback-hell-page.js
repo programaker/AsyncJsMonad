@@ -1,5 +1,5 @@
-//Page modules can be auto-exec, or else no one will execute them
-(function CallbackHellPage() {
+(function callback_hell_page_js() {
+
     //Classic way of doing ajax in jQuery, with nested success callbacks.
     $.ajax({
         url: 'https://www.googleapis.com/youtube/v3/channels',
@@ -51,4 +51,5 @@
     function randomIntBetween(min, max) {
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
+
 }());

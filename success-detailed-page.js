@@ -1,10 +1,8 @@
-//Page modules can be auto-exec or alternativelly an argument to $(document).ready()
-(function SuccessDetailedPage() { //<= 3rd way to get an Async instance: inject into Page module as a dependency
-    var async = Async();
+(function success_detailed_page_js() {
 
     //request 4 Youtube channels by id
     // => Async[List[YoutubeChannel]]
-    var asyncChannels = async.request({
+    var asyncChannels = Async.request({
         url: 'https://www.googleapis.com/youtube/v3/channels',
         dataType: 'jsonp',
         jsonp: 'callback',
@@ -24,7 +22,7 @@
     //request the last 10 videos of the chosen channel
     //Async[YoutubeChannel] => Async[List[YoutubeVideo]]
     var asyncChannelLastVideos = asyncChosenChannel.flatMap(function requestVideosFromChannel(chosenChannel) {
-        return async.request({
+        return Async.request({
             url: 'https://www.googleapis.com/youtube/v3/search',
             dataType: 'jsonp',
             jsonp: 'callback',
@@ -72,4 +70,5 @@
     function randomIntBetween(min, max) {
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
+
 }());

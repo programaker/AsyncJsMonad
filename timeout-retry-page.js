@@ -1,12 +1,12 @@
-//Page modules can be auto-exec or alternativelly an argument to $(document).ready()
-(function TimeoutRetryPage() {
-    Async().request({
+(function timeout_retry_page_js() {
+
+    Async.request({
         url: 'http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/rest/index.cfm/obterTodasPosicoes',
         beforeSend: function logRequestAboutToHappen() {
             console.log('>>> will make an ajax request...');
         },
         //including timeout configuration
-        timeout: 265,
+        timeout: 333,
         timeoutConfig: {
             retry: true,
             attempts: 9
@@ -26,4 +26,5 @@
             console.log('>>> done');
         }
     });
+
 }());

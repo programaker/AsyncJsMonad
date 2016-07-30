@@ -1,5 +1,5 @@
-//Page modules can be auto-exec or alternativelly an argument to $(document).ready()
-(function SuccessChainingPage() {
+(function success_chaining_page_js() {
+
     var channelsRequestData = {
         url: 'https://www.googleapis.com/youtube/v3/channels',
         dataType: 'jsonp',
@@ -12,12 +12,10 @@
         beforeSend: logRequestAboutToHappen
     };
 
-    var async = new Async($); //<= 2nd way to get an Async instance: with new operator
-
-    //This example is slightly different from "success-detailed.js" because I wanted to show the async.unit() function.
-    //There, I started directly from async.request()
-    async.unit(channelsRequestData)
-        .flatMap(async.request)
+    //This example is slightly different from "success-detailed.js" because I wanted to show the Async.unit() function.
+    //There, I started directly from Async.request()
+    Async.unit(channelsRequestData)
+        .flatMap(Async.request)
         .map(chooseRandomChannel)
         .flatMap(requestVideosFromChannel)
         .map(chooseRandomVideo)
@@ -38,7 +36,7 @@
     }
 
     function requestVideosFromChannel(chosenChannel) {
-        return async.request({
+        return Async.request({
             url: 'https://www.googleapis.com/youtube/v3/search',
             dataType: 'jsonp',
             jsonp: 'callback',
@@ -81,4 +79,5 @@
     function logCompletion() {
         console.log('>>> done');
     }
+
 }());

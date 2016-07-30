@@ -1,14 +1,13 @@
-//Page modules can be auto-exec, or else no one will execute them
-(function CheckMonadLawsPage() {
-	var async = Async(); //<= 1st way to get an Async instance: direct constructor function call
+(function check_monad_laws_page_js() {
+
 	var number = 456;
-	function plusOne(n){ return async.unit(n + 1) }
-	function toString(n){ return async.unit('' + n) }
+	function plusOne(n){ return Async.unit(n + 1) }
+	function toString(n){ return Async.unit('' + n) }
 
 
 	//1. Left Identity: unit(a).flatMap(f) === f(a)
-	(function leftIdentity(async, a, f) {
-		var l = async.unit(a).flatMap(f);
+	(function leftIdentity(a, f) {
+		var l = Async.unit(a).flatMap(f);
 		var r = f(a);
 
 		var message;
@@ -21,13 +20,13 @@
 		}
 
 		$('#first-law').text(message);
-	}(async, number, plusOne));
+	}(number, plusOne));
 
 	
 	//2. Right Identity: m.flatMap(unit) === m
-	(function rightIdentity(async, a) {
-		var m = async.unit(a);
-		var l = m.flatMap(async.unit);
+	(function rightIdentity(a) {
+		var m = Async.unit(a);
+		var l = m.flatMap(Async.unit);
 		var r = m;
 
 		var message;
@@ -40,12 +39,12 @@
 		}
 
 		$('#second-law').text(message);
-	}(async, number));
+	}(number));
 	
 
 	//3. Associativity: m.flatMap(f).flatMap(g) === m.flatMap(function(x){ return f(x).flatMap(g) })
-	(function associativity(async, a, f, g) {
-		var m = async.unit(a);
+	(function associativity(a, f, g) {
+		var m = Async.unit(a);
 		var l = m.flatMap(f).flatMap(g);
 		var r = m.flatMap(function(x){ return f(x).flatMap(g) });
 
@@ -59,5 +58,6 @@
 		}
 
 		$('#third-law').text(message);
-	}(async, number, plusOne, toString));
+	}(number, plusOne, toString));
+
 }());

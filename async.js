@@ -1,17 +1,6 @@
-//Async module constructor function
-//It is not an auto-exec function, so that we can execute it just when it's really needed
-//
-//Async module can be created like "var async = Async()" or "var async = new Async()";
-//both generate the sabe result
-function Async() {
-    
-    //Module's public interface - the Async module itself
-    //Only the functions stored in this object will be exported to the outside world
-    //Everything else is private
-    //
-    //It could be an anonymous object defined directly at the 'return' statement, 
-    //but this way we have a top-down reasoning that gives priority to module's public services
-    var AsyncModule = {
+(function async_js() {
+
+    window.Async = {
         unit: unit,
         request: request,
         completeAsSuccess: completeAsSuccess,
@@ -211,8 +200,4 @@ function Async() {
         return {responseCode: 0, textStatus: 'Unexpected Error', errorThrown: e};
     }
 
-
-    //Finally, returns module's public interface defined on the top
-    //Again, this object could be defined here, but we would lose the top-down reasoning
-    return AsyncModule;
-}
+}());

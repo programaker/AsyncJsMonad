@@ -1,6 +1,6 @@
-//Page modules can be auto-exec or alternativelly an argument to $(document).ready()
-(function FailPage() {
-    Async().request({
+(function fail_page_js() {
+
+    Async.request({
         url: 'http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/rest/index.cfm/obterTodasPosicoes__ERROR',
         beforeSend: function logRequestAboutToHappen() {
             console.log('>>> will make an ajax request...');
@@ -20,4 +20,5 @@
             console.log('>>> done');
         }
     });
+
 }());
